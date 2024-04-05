@@ -57,13 +57,15 @@ function toggleJumpy(tabId) {
         allHeaders.forEach((h) => {
           const button = document.createElement("button");
           button.innerText = h.text;
+          button.style.fontSize = "1.2rem";
           const buttonStyles = {
             display: "block",
             paddingTop: "10px",
-            paddingBottom: "10p",
+            paddingBottom: "10px",
             background: "transparent",
             border: "none",
             color: "white",
+
           };
           Object.assign(button.style, buttonStyles)
 
