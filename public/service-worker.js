@@ -132,6 +132,8 @@ function toggleJumpy(tabId) {
 
           if (foundHeaderIdx === -1) {
             headerListContainer.firstChild.focus();
+            chrome.storage.session.remove("lastJumpedHeader");
+
           } else {
             headerListContainer.children[foundHeaderIdx].focus();
           }
