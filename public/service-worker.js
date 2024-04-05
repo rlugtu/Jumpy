@@ -1,3 +1,7 @@
+chrome.storage.session.setAccessLevel({
+  accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS",
+});
+
 chrome.commands.onCommand.addListener(async (command) => {
   const [currentTab] = await chrome.tabs.query({
     active: true,
@@ -18,6 +22,7 @@ function toggleJumpy(tabId) {
         // toggle on and off with same hotkey
         if (headerExtensionExists) {
           headerExtensionExists.remove();
+          // chrome.storage.session.remove("lastJumpedHeader");
           return;
         }
 
@@ -42,32 +47,61 @@ function toggleJumpy(tabId) {
         const styles = {
           position: "fixed",
           bottom: "0",
-          width: "100%",
-          padding: "10px",
+          paddingBottom: "10px",
           maxHeight: "350px",
+          width: "500px",
           overflowY: "scroll",
           display: "flex",
           flexDirection: "column",
-          backgroundColor: "#1e293b",
+          backgroundColor: "rgba(15, 23, 42, 0.95)",
           color: "white",
           zIndex: "10000",
+          borderTopRightRadius: "15px",
         };
         Object.assign(headerListContainer.style, styles);
+
+        function getPaddingByHeader(type) {
+          switch (type) {
+            case 'H1':
+              return '20px';
+            case 'H2':
+              return '40px';
+            case 'H3':
+              return '60px';
+            case 'H4':
+              return '80px';
+            case 'H5':
+              return '100px';
+            case 'H6':
+              return '120px';
+          }
+        }
 
         allHeaders.forEach((h) => {
           const button = document.createElement("button");
           button.innerText = h.text;
-          button.style.fontSize = "1.2rem";
+          button.style.fontSize = "1rem";
           const buttonStyles = {
             display: "block",
-            paddingTop: "10px",
-            paddingBottom: "10px",
-            background: "transparent",
+            padding: "14px",
+            backgroundColor: "transparent",
+            outline: "none",
             border: "none",
             color: "white",
-
+            fontSize: "18px",
+            textAlign: "start",
+            paddingLeft: `
+            ${getPaddingByHeader(h.type)}
+            `
           };
-          Object.assign(button.style, buttonStyles)
+          Object.assign(button.style, buttonStyles);
+          button.addEventListener("focus", function () {
+            this.style.backgroundColor = "#334155";
+          });
+
+          button.addEventListener("blur", function () {
+            this.style.backgroundColor = "transparent";
+          });
 
           button.addEventListener("keydown", function (event) {
             const scrollOffset = -150;
@@ -78,6 +112,9 @@ function toggleJumpy(tabId) {
 
             if (event.key === "Enter") {
               window.scrollTo({ top: positionToScrollTo, behavior: "smooth" });
+              chrome.storage.session.set({
+                lastJumpedHeader: h.text,
+              });
             }
           });
 
@@ -85,8 +122,21 @@ function toggleJumpy(tabId) {
         });
 
         document.body.appendChild(headerListContainer);
-        headerListContainer.tabIndex = 1;
-        headerListContainer.firstChild.focus();
+
+        chrome.storage.session.get(["lastJumpedHeader"]).then((res) => {
+          const foundHeaderIdx = allHeaders.findIndex(
+            (h) => h.text === res.lastJumpedHeader,
+          );
+
+          headerListContainer.tabIndex = 1;
+
+          if (foundHeaderIdx === -1) {
+            headerListContainer.firstChild.focus();
+          } else {
+            headerListContainer.children[foundHeaderIdx].focus();
+          }
+        });
+
         return allHeaders;
       },
     })
